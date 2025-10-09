@@ -1,0 +1,67 @@
+@extends('layouts.app')
+
+@section('title', 'Pridať lokáciu')
+
+@section('content')
+<div class="row">
+    <div class="col-md-8">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{{ route('locations.index') }}" class="btn btn-outline-secondary me-3">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h1><i class="fas fa-plus me-2"></i>Pridať lokáciu</h1>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ route('locations.store') }}">
+                    @csrf
+
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Názov *</label>
+                        <input type="text" class="form-control @error('name') is-invalid @enderror"
+                               id="name" name="name" value="{{ old('name') }}" required>
+                        @error('name')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="building" class="form-label">Budova</label>
+                        <input type="text" class="form-control @error('building') is-invalid @enderror"
+                               id="building" name="building" value="{{ old('building') }}">
+                        @error('building')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="room" class="form-label">Miestnosť</label>
+                        <input type="text" class="form-control @error('room') is-invalid @enderror"
+                               id="room" name="room" value="{{ old('room') }}">
+                        @error('room')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Popis</label>
+                        <textarea class="form-control @error('description') is-invalid @enderror"
+                                  id="description" name="description" rows="3">{{ old('description') }}</textarea>
+                        @error('description')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="d-flex justify-content-end">
+                        <a href="{{ route('locations.index') }}" class="btn btn-secondary me-2">Zrušiť</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Uložiť
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection

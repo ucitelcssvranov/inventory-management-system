@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test AJAX funkcionality</title>
+    <meta name="csrf-token" content="test-token">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div class="container mt-4">
+    <h1>Test hierarchickej navigácie</h1>
+    
+    <div class="alert alert-info">
+        <strong>Inštrukcie:</strong>
+        <ul>
+            <li>Otvorte <a href="http://127.0.0.1:8000/locations" target="_blank">http://127.0.0.1:8000/locations</a></li>
+            <li>Prihláste sa ak je potreba</li>
+            <li>Otestujte inline editáciu názvov budov</li>
+            <li>Otestujte editáciu poznámok</li>
+            <li>Otestujte navigation do miestností</li>
+        </ul>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h3>Očakávané funkcionality:</h3>
+            <ul class="list-group">
+                <li class="list-group-item"><i class="fas fa-check text-success"></i> Zobrazenie budov v kartách</li>
+                <li class="list-group-item"><i class="fas fa-check text-success"></i> Dropdown menu s možnosťami</li>
+                <li class="list-group-item"><i class="fas fa-check text-success"></i> Inline editácia názvov</li>
+                <li class="list-group-item"><i class="fas fa-check text-success"></i> Inline editácia poznámok</li>
+                <li class="list-group-item"><i class="fas fa-check text-success"></i> Toast notifikácie</li>
+                <li class="list-group-item"><i class="fas fa-check text-success"></i> Navigate do miestností</li>
+            </ul>
+        </div>
+        <div class="col-md-6">
+            <h3>AJAX endpoints:</h3>
+            <ul class="list-group">
+                <li class="list-group-item">
+                    <strong>Quick Update:</strong><br>
+                    <code>PATCH /locations/{id}/quick-update</code>
+                </li>
+                <li class="list-group-item">
+                    <strong>Show Budova:</strong><br>
+                    <code>GET /locations/{id}</code>
+                </li>
+                <li class="list-group-item">
+                    <strong>Delete:</strong><br>
+                    <code>DELETE /locations/{id}</code>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+</body>
+</html>
