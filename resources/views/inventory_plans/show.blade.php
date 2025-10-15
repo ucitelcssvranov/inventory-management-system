@@ -46,8 +46,16 @@
                     <dt class="col-sm-4">Deň inventúry</dt>
                     <dd class="col-sm-8">{{ $inventoryPlan->inventory_day ? $inventoryPlan->inventory_day->format('d.m.Y') : '-' }}</dd>
                     
-                    <dt class="col-sm-4">Lokácia</dt>
-                    <dd class="col-sm-8">{{ $inventoryPlan->location->name ?? '-' }}</dd>
+                    <dt class="col-sm-4">Lokácie</dt>
+                    <dd class="col-sm-8">
+                        @if($inventoryPlan->locations->count() > 0)
+                            @foreach($inventoryPlan->locations as $location)
+                                <span class="badge bg-primary me-1">{{ $location->name }}</span>
+                            @endforeach
+                        @else
+                            -
+                        @endif
+                    </dd>
                     
                     <dt class="col-sm-4">Kategória</dt>
                     <dd class="col-sm-8">{{ $inventoryPlan->category->name ?? '-' }}</dd>

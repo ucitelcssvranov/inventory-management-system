@@ -62,17 +62,34 @@ class RemoveInventoryGroupsAndUpdateStructure extends Migration
         // 3. Odstránime inventory_group_id stĺpec z inventory_plan_items
         Schema::table('inventory_plan_items', function (Blueprint $table) {
             if (Schema::hasColumn('inventory_plan_items', 'inventory_group_id')) {
-                $table->dropForeign(['inventory_group_id']);
+                try {
+                    $table->dropForeign(['inventory_group_id']);
+                } catch (\Exception $e) {
+                    // Foreign key neexistuje, pokračujeme
+                }
                 $table->dropColumn('inventory_group_id');
             }
         });
 
         // 4. Odstránime všetky foreign key constraints pre inventory_groups
         if (Schema::hasTable('inventory_group_members')) {
-            Schema::table('inventory_group_members', function (Blueprint $table) {
-                $table->dropForeign(['inventory_group_id']);
-                $table->dropForeign(['user_id']);
-            });
+            // Skontrolujeme existenciu constraint pred odstránením
+            try {
+                Schema::table('inventory_group_members', function (Blueprint $table) {
+                    $table->dropForeign(['inventory_group_id']);
+                });
+            } catch (\Exception $e) {
+                // Foreign key neexistuje, pokračujeme
+            }
+            
+            try {
+                Schema::table('inventory_group_members', function (Blueprint $table) {
+                    $table->dropForeign(['user_id']);
+                });
+            } catch (\Exception $e) {
+                // Foreign key neexistuje, pokračujeme
+            }
+            
             Schema::dropIfExists('inventory_group_members');
         }
 

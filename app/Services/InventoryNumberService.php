@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Asset;
+use App\Models\SystemSetting;
 use Carbon\Carbon;
 
 class InventoryNumberService
@@ -12,19 +13,29 @@ class InventoryNumberService
      * 
      * @param int $assetId ID majetku
      * @param string|Carbon $acquisitionDate Dátum nadobudnutia
-     * @return string Inventárne číslo vo formáte YYYY-ID
+     * @return string Inventárne číslo vo formáte podľa nastavení systému
      */
     public function generateInventoryNumber($assetId, $acquisitionDate): string
     {
+        // Získanie formátu z nastavení
+        $format = SystemSetting::get('inventory_number_format', 'YYYY-ID');
+        
         // Konverzia dátumu na Carbon objekt ak je potrebné
         if (!$acquisitionDate instanceof Carbon) {
             $acquisitionDate = Carbon::parse($acquisitionDate);
         }
         
-        $year = $acquisitionDate->year;
-        
-        // Formát: YYYY-ID (napr. 2024-1, 2024-2, atď.)
-        return sprintf('%d-%d', $year, $assetId);
+        switch ($format) {
+            case 'sequential':
+                // Sekvenčné číslovanie s paddingom
+                return sprintf('%06d', $assetId);
+                
+            case 'YYYY-ID':
+            default:
+                // Formát: YYYY-ID (napr. 2024-1, 2024-2, atď.)
+                $year = $acquisitionDate->year;
+                return sprintf('%d-%d', $year, $assetId);
+        }
     }
 
     /**
@@ -32,20 +43,30 @@ class InventoryNumberService
      * Používa sa pre preview v formulári
      * 
      * @param string|Carbon $acquisitionDate Dátum nadobudnutia
-     * @return string Dočasné inventárne číslo vo formáte YYYY-XXXX
+     * @return string Dočasné inventárne číslo vo formáte podľa nastavení
      */
     public function generateTemporaryInventoryNumber($acquisitionDate): string
     {
+        // Získanie formátu z nastavení
+        $format = SystemSetting::get('inventory_number_format', 'YYYY-ID');
+        
         if (!$acquisitionDate instanceof Carbon) {
             $acquisitionDate = Carbon::parse($acquisitionDate);
         }
         
-        $year = $acquisitionDate->year;
-        
-        // Nájdeme najbližšie ID pre daný rok
-        $nextId = $this->getNextIdForYear($year);
-        
-        return sprintf('%d-%d', $year, $nextId);
+        switch ($format) {
+            case 'sequential':
+                // Sekvenčné číslovanie - nájdeme nasledujúce ID
+                $nextId = $this->getNextIdForSequential();
+                return sprintf('%06d', $nextId);
+                
+            case 'YYYY-ID':
+            default:
+                $year = $acquisitionDate->year;
+                // Nájdeme najbližšie ID pre daný rok
+                $nextId = $this->getNextIdForYear($year);
+                return sprintf('%d-%d', $year, $nextId);
+        }
     }
 
     /**
@@ -125,5 +146,17 @@ class InventoryNumberService
         }
         
         return $year === $acquisitionDate->year;
+    }
+
+    /**
+     * Získa nasledujúce ID pre sekvenčné číslovanie
+     * 
+     * @return int Nasledujúce ID
+     */
+    private function getNextIdForSequential(): int
+    {
+        // Nájdeme najvyššie ID v systéme a pridáme 1
+        $maxId = Asset::max('id') ?? 0;
+        return $maxId + 1;
     }
 }

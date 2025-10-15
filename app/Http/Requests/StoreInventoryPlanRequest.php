@@ -13,8 +13,8 @@ class StoreInventoryPlanRequest extends FormRequest
      */
     public function authorize()
     {
-        // Iba admin alebo inventory manager môže vytvárať plány
-        return auth()->user()->isAdmin() || auth()->user()->isInventoryManager();
+        // Iba admin s oprávneniami alebo inventory manager môže vytvárať plány
+        return auth()->user()->hasAdminPrivileges() || auth()->user()->isInventoryManager();
     }
 
     /**
@@ -34,10 +34,12 @@ class StoreInventoryPlanRequest extends FormRequest
             'inventory_day' => 'required|date|after_or_equal:date_start|before_or_equal:date_end',
             'unit_name' => 'required|string|max:255',
             'unit_address' => 'required|string|max:255',
-            'storage_place' => 'required|string|max:255',
-            'responsible_person_id' => 'required|exists:users,id',
             'planned_date' => 'nullable|date',
-            'location_id' => 'nullable|exists:locations,id',
+            'responsible_person_id' => 'required|exists:users,id',
+            'commission_id' => 'required|exists:inventory_commissions,id',
+            'plan_category_id' => 'nullable|exists:categories,id',
+            'location_ids' => 'required|array|min:1',
+            'location_ids.*' => 'exists:locations,id',
             'category_id' => 'nullable|exists:categories,id',
         ];
     }

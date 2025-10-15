@@ -59,9 +59,17 @@
             <div class="col-md-6">
                 <div class="card shadow-sm">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-list-ul text-primary"></i> Neschválené inventarizačné plány
-                        </h5>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-list-ul text-primary"></i> Neschválené inventarizačné plány
+                            </h5>
+                            @if($unassignedPlans->count() > 0)
+                                <button class="btn btn-sm btn-success auto-assign-all-btn" 
+                                        title="Automaticky priradiť všetky plány">
+                                    <i class="bi bi-magic"></i> Auto-priradiť všetky
+                                </button>
+                            @endif
+                        </div>
                     </div>
                     <div class="card-body">
                         @if($unassignedPlans->count() > 0)
@@ -93,13 +101,20 @@
                                                     @endif
                                                 </td>
                                                 <td>
-                                                    <button class="btn btn-sm btn-primary assign-commission-btn" 
-                                                            data-plan-id="{{ $plan->id }}"
-                                                            data-bs-toggle="modal" 
-                                                            data-bs-target="#assignCommissionModal"
-                                                            title="Priradiť komisiu">
-                                                        <i class="bi bi-person-plus"></i>
-                                                    </button>
+                                                    <div class="btn-group" role="group">
+                                                        <button class="btn btn-sm btn-primary assign-commission-btn" 
+                                                                data-plan-id="{{ $plan->id }}"
+                                                                data-bs-toggle="modal" 
+                                                                data-bs-target="#assignCommissionModal"
+                                                                title="Priradiť komisiu manuálne">
+                                                            <i class="bi bi-person-plus"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-success auto-assign-single-btn" 
+                                                                data-plan-id="{{ $plan->id }}"
+                                                                title="Automaticky priradiť komisiu">
+                                                            <i class="bi bi-magic"></i>
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -460,6 +475,76 @@ $(document).ready(function() {
         }
     });
 
+    // Auto-assign single plan
+    $('.auto-assign-single-btn').click(function() {
+        const planId = $(this).data('plan-id');
+        const button = $(this);
+        
+        if (confirm('Automaticky priradiť komisiu k tomuto plánu?')) {
+            button.prop('disabled', true).html('<i class="bi bi-arrow-clockwise spin"></i>');
+            
+            fetch(`/inventory-plans/${planId}/auto-assign`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', data.message);
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert('warning', data.message || 'Nepodarilo sa automaticky priradiť komisiu.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('danger', 'Chyba pri automatickom priraďovaní.');
+            })
+            .finally(() => {
+                button.prop('disabled', false).html('<i class="bi bi-magic"></i>');
+            });
+        }
+    });
+
+    // Auto-assign all plans
+    $('.auto-assign-all-btn').click(function() {
+        const button = $(this);
+        const planCount = {{ $unassignedPlans->count() }};
+        
+        if (confirm(`Automaticky priradiť komisie k všetkým ${planCount} plánom?`)) {
+            button.prop('disabled', true).html('<i class="bi bi-arrow-clockwise spin"></i> Priraďujem...');
+            
+            fetch('/inventory-plans/auto-assign-all', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', `${data.assigned_count} z ${data.total_count} plánov bolo úspešne priradených.`);
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    showAlert('warning', data.message || 'Niektoré plány sa nepodarilo priradiť.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('danger', 'Chyba pri automatickom priraďovaní.');
+            })
+            .finally(() => {
+                button.prop('disabled', false).html('<i class="bi bi-magic"></i> Auto-priradiť všetky');
+            });
+        }
+    });
+
     // Remove commission assignment
     $('.remove-commission-btn').click(function() {
         const planId = $(this).data('plan-id');
@@ -497,6 +582,21 @@ $(document).ready(function() {
 .avatar-sm {
     width: 24px;
     height: 24px;
+}
+
+.avatar-md {
+    width: 40px;
+    height: 40px;
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
     font-size: 10px;
     font-weight: bold;
 }

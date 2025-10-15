@@ -48,10 +48,10 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::prefix('inventory')->group(function () {
         Route::get('/plans', [InventoryApiController::class, 'getPlans']);
         Route::get('/plans/{plan}', [InventoryApiController::class, 'getPlan']);
-        Route::get('/user-groups', [InventoryApiController::class, 'getUserGroups']);
-        Route::get('/groups/{group}/counts', [InventoryApiController::class, 'getInventoryCounts']);
+        Route::get('/user-commissions', [InventoryApiController::class, 'getUserCommissions']);
+        Route::get('/commissions/{commission}/counts', [InventoryApiController::class, 'getInventoryCounts']);
         Route::post('/counts', [InventoryApiController::class, 'recordCount']);
-        Route::get('/groups/{group}/overview', [InventoryApiController::class, 'getInventoryOverview']);
+        Route::get('/commissions/{commission}/overview', [InventoryApiController::class, 'getInventoryOverview']);
         Route::get('/dashboard/stats', [InventoryApiController::class, 'getDashboardStats']);
     });
 

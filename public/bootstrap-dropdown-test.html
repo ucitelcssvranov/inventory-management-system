@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bootstrap Dropdown Test</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Bootstrap Dropdown Test</h1>
+        
+        <!-- Test navbaru dropdown -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">Test App</a>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle me-1"></i>
+                            Admin User
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">Profil</a></li>
+                            <li><a class="dropdown-item" href="#">Nastavenia</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#">Odhlásiť sa</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        
+        <!-- Test hromadných operácií dropdown -->
+        <div class="d-flex justify-content-between align-items-center bg-primary text-white p-3 rounded mb-3">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-check-square me-2"></i>
+                <span>5 položiek vybratých</span>
+            </div>
+            <div class="dropdown">
+                <button type="button" class="btn btn-outline-light btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-gear me-1"></i>Hromadné operácie
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#">
+                        <i class="bi bi-toggle-on me-2"></i>Zmeniť stav
+                    </a></li>
+                    <li><a class="dropdown-item" href="#">
+                        <i class="bi bi-geo-alt me-2"></i>Zmeniť lokáciu
+                    </a></li>
+                    <li><a class="dropdown-item" href="#">
+                        <i class="bi bi-person me-2"></i>Zmeniť vlastníka
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#">
+                        <i class="bi bi-trash me-2"></i>Vymazať
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Dalšie testy -->
+        <div class="row">
+            <div class="col-md-6">
+                <h3>Štandardný Dropdown</h3>
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Dropdown button
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Action</a></li>
+                        <li><a class="dropdown-item" href="#">Another action</a></li>
+                        <li><a class="dropdown-item" href="#">Something else here</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h3>Debug Info</h3>
+                <div id="debug-info" class="alert alert-info">
+                    Načítavam debug informácie...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const debugDiv = document.getElementById('debug-info');
+            let debugInfo = '<strong>Bootstrap Debug Info:</strong><br>';
+            
+            if (window.bootstrap) {
+                debugInfo += '✅ Bootstrap JavaScript je načítaný<br>';
+                debugInfo += `📦 Bootstrap verzia: ${bootstrap.Tooltip ? 'Tooltip dostupný' : 'Neznáma verzia'}<br>`;
+                
+                // Test dropdown inicializácie
+                const dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+                debugInfo += `🎯 Nájdených ${dropdowns.length} dropdown elementov<br>`;
+                
+                dropdowns.forEach((dropdown, index) => {
+                    try {
+                        const dropdownInstance = new bootstrap.Dropdown(dropdown);
+                        debugInfo += `✅ Dropdown ${index + 1} úspešne inicializovaný<br>`;
+                    } catch (error) {
+                        debugInfo += `❌ Dropdown ${index + 1} chyba: ${error.message}<br>`;
+                    }
+                });
+            } else {
+                debugInfo += '❌ Bootstrap JavaScript nie je načítaný<br>';
+            }
+            
+            if (window.jQuery) {
+                debugInfo += '✅ jQuery je načítané<br>';
+            } else {
+                debugInfo += '❌ jQuery nie je načítané<br>';
+            }
+            
+            debugDiv.innerHTML = debugInfo;
+            
+            // Manual test pre dropdowny
+            const manualDropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+            manualDropdowns.forEach(dropdown => {
+                dropdown.addEventListener('click', function(e) {
+                    console.log('Dropdown kliknutý:', this);
+                    console.log('Bootstrap dostupný:', !!window.bootstrap);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -268,7 +268,22 @@ class AjaxController extends Controller
     public function getLocations(): JsonResponse
     {
         try {
-            $locations = Location::with('category:id,name')->orderBy('name')->get(['id', 'name', 'category_id']);
+            $locations = Location::orderBy('name')->get(['id', 'name', 'type', 'room_number']);
+
+            // Format the locations for better display
+            $locations = $locations->map(function ($location) {
+                $displayName = $location->name;
+                if ($location->type === 'miestnost' && $location->room_number) {
+                    $displayName = $location->room_number . ' - ' . $location->name;
+                }
+                
+                return [
+                    'id' => $location->id,
+                    'name' => $displayName,
+                    'type' => $location->type,
+                    'original_name' => $location->name
+                ];
+            });
 
             return response()->json([
                 'success' => true,

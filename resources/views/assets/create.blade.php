@@ -138,29 +138,14 @@
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="inventory_commission_id" class="form-label">Inventarizačná komisia</label>
-                                <select name="inventory_commission_id" id="inventory_commission_id" class="form-select" required>
-                                    <option value="">Vyberte komisiu</option>
-                                    @foreach($inventoryCommissions as $inventoryCommission)
-                                        <option value="{{ $inventoryCommission->id }}">{{ $inventoryCommission->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="owner_id" class="form-label">Vlastník</label>
-                                <select name="owner_id" id="owner_id" class="form-select" required>
-                                    <option value="">Vyberte vlastníka</option>
-                                    @foreach($users as $user)
-                                        <option value="{{ $user->id }}">{{ $user->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
+                    <div class="mb-3">
+                        <label for="owner_id" class="form-label">Vlastník</label>
+                        <select name="owner_id" id="owner_id" class="form-select" required>
+                            <option value="">Vyberte vlastníka</option>
+                            @foreach($users as $user)
+                                <option value="{{ $user->id }}">{{ $user->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
 
                     <div class="mb-3">

@@ -72,11 +72,27 @@ class User extends Authenticatable
     }
 
     /**
+     * Kontrola, či je admin v user mode (behá ako bežný používateľ)
+     */
+    public function isInUserMode()
+    {
+        return session('admin_user_mode', false) === true;
+    }
+
+    /**
+     * Kontrola, či má admin oprávnenia (nie je v user mode)
+     */
+    public function hasAdminPrivileges()
+    {
+        return $this->isAdmin() && !$this->isInUserMode();
+    }
+
+    /**
      * Kontrola, či je používateľ správca inventarizácie
      */
     public function isInventoryManager()
     {
-        return $this->role === self::ROLE_INVENTORY_MANAGER || $this->isAdmin();
+        return $this->role === self::ROLE_INVENTORY_MANAGER || $this->hasAdminPrivileges();
     }
 
     /**
@@ -92,7 +108,7 @@ class User extends Authenticatable
      */
     public function isAnyGroupLeader()
     {
-        return $this->leadingGroups()->exists();
+        return false; // Skupiny už neexistujú
     }
 
     /**
@@ -119,54 +135,6 @@ class User extends Authenticatable
     {
         $roles = self::getRoleOptions();
         return $roles[$this->role] ?? 'Neznáma rola';
-    }
-
-    /**
-     * Inventarizačné skupiny, kde je tento používateľ vedúcim
-     */
-    public function leadingGroups()
-    {
-        return $this->hasMany(\App\Models\InventoryGroup::class, 'leader_id');
-    }
-
-    /**
-     * Inventarizačné skupiny, kde je tento používateľ členom
-     */
-    public function memberGroups()
-    {
-        return $this->belongsToMany(\App\Models\InventoryGroup::class, 'inventory_group_members', 'user_id', 'group_id')
-                    ->select('inventory_groups.*')
-                    ->withPivot('role', 'assigned_at', 'removed_at', 'assigned_by')
-                    ->whereNull('inventory_group_members.removed_at')
-                    ->withTimestamps();
-    }
-
-    /**
-     * Všetky inventarizačné skupiny používateľa (vedúci + člen)
-     */
-    public function allGroups()
-    {
-        $leadingGroups = $this->leadingGroups;
-        $memberGroups = $this->memberGroups;
-        
-        return $leadingGroups->merge($memberGroups)->unique('id')->sortBy('name');
-    }
-
-    /**
-     * Kontrola, či je používateľ členom konkrétnej inventarizačnej skupiny
-     */
-    public function isGroupMember($groupId)
-    {
-        return $this->leadingGroups()->where('id', $groupId)->exists() ||
-               $this->memberGroups()->where('inventory_groups.id', $groupId)->exists();
-    }
-
-    /**
-     * Kontrola, či je používateľ vedúcim konkrétnej inventarizačnej skupiny
-     */
-    public function isGroupLeader($groupId)
-    {
-        return $this->leadingGroups()->where('id', $groupId)->exists();
     }
 
     /**

@@ -18,7 +18,11 @@ class InventoryPlanItem extends Model
         'assigned_at',
         'started_at',
         'completed_at',
+        'verified_at',
         'assigned_by',
+        'started_by',
+        'completed_by',
+        'verified_by',
         'inventory_notes',
         'digital_updates'
     ];
@@ -27,6 +31,7 @@ class InventoryPlanItem extends Model
         'assigned_at' => 'datetime',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
+        'verified_at' => 'datetime',
         'digital_updates' => 'array'
     ];
 

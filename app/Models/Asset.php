@@ -89,7 +89,7 @@ class Asset extends Model
     }
 
     /**
-     * Boot method pre automatické generovanie inventárneho čísla
+     * Boot method pre automatické generovanie inventárneho čísla a QR kódu
      */
     protected static function boot()
     {
@@ -103,6 +103,36 @@ class Asset extends Model
                     $asset->acquisition_date
                 );
                 $asset->saveQuietly(); // Uloží bez triggerovania eventov
+                
+                // Automatické generovanie QR kódu
+                try {
+                    $qrCodeService = app(\App\Services\QrCodeService::class);
+                    $qrCodeService->generateQrCode($asset);
+                } catch (\Exception $e) {
+                    \Log::warning("Nepodarilo sa vygenerovať QR kód pre asset {$asset->id}: " . $e->getMessage());
+                }
+            }
+        });
+
+        static::updated(function ($asset) {
+            // Ak sa zmenil inventory_number, regeneruj QR kód
+            if ($asset->isDirty('inventory_number')) {
+                try {
+                    $qrCodeService = app(\App\Services\QrCodeService::class);
+                    $qrCodeService->generateQrCode($asset);
+                } catch (\Exception $e) {
+                    \Log::warning("Nepodarilo sa regenerovať QR kód pre asset {$asset->id}: " . $e->getMessage());
+                }
+            }
+        });
+
+        static::deleted(function ($asset) {
+            // Vymaž QR kód pri zmazaní assetu
+            try {
+                $qrCodeService = app(\App\Services\QrCodeService::class);
+                $qrCodeService->deleteQrCode($asset);
+            } catch (\Exception $e) {
+                \Log::warning("Nepodarilo sa vymazať QR kód pre asset {$asset->id}: " . $e->getMessage());
             }
         });
     }
@@ -161,5 +191,40 @@ class Asset extends Model
     {
         $inventoryService = new InventoryNumberService();
         return $inventoryService->generateTemporaryInventoryNumber($acquisitionDate);
+    }
+
+    /**
+     * Get QR code URL for this asset
+     */
+    public function getQrCodeUrl(): ?string
+    {
+        try {
+            $qrCodeService = app(\App\Services\QrCodeService::class);
+            return $qrCodeService->getQrCodeUrl($this);
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Check if QR code exists for this asset
+     */
+    public function hasQrCode(): bool
+    {
+        return $this->getQrCodeUrl() !== null;
+    }
+
+    /**
+     * Generate QR code for this asset
+     */
+    public function generateQrCode(): bool
+    {
+        try {
+            $qrCodeService = app(\App\Services\QrCodeService::class);
+            $filename = $qrCodeService->generateQrCode($this);
+            return $filename !== null;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 }

@@ -148,21 +148,11 @@
                         <select name="owner_id" id="owner_id" class="form-select" required>
                             <option value="">Vyberte vlastníka</option>
                             @foreach($users as $user)
-                                <option value="{{ $user->id }}" {{ $asset->owner_id == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
+                                <option value="{{ $user->id }}" {{ $asset->owner == $user->name ? 'selected' : '' }}>{{ $user->name }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label for="inventory_commission_id" class="form-label">Inventarizačná komisia</label>
-                        <select name="inventory_commission_id" id="inventory_commission_id" class="form-select" required>
-                            <option value="">Vyberte komisiu</option>
-                            @foreach($inventoryCommissions as $inventoryCommission)
-                                <option value="{{ $inventoryCommission->id }}" {{ $asset->inventory_commission_id == $inventoryCommission->id ? 'selected' : '' }}>{{ $inventoryCommission->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="d-flex justify-content-end">
+                                      <div class="d-flex justify-content-end">
                         <a href="{{ route('assets.index') }}" class="btn btn-secondary me-2">Zrušiť</a>
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-save me-1"></i>Uložiť

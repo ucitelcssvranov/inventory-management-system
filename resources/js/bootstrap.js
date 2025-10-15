@@ -1,8 +1,7 @@
 window._ = require('lodash');
 
-try {
-    require('bootstrap');
-} catch (e) {}
+// Bootstrap 5 is loaded via CDN in the layout file to avoid version conflicts
+// Removed webpack bootstrap loading completely
 
 /**
  * We'll load the axios HTTP library which allows us to easily issue requests

@@ -221,36 +221,28 @@ class InventoryCommissionController extends Controller
             $commissions = InventoryCommission::with([
                 'chairman',
                 'members',
-                'inventoryPlans.inventoryGroups',
-                'inventoryGroups'
+                'inventoryPlans'
             ])->get();
         } else {
             $commissions = $userCommissions->load([
                 'chairman',
                 'members',
-                'inventoryPlans.inventoryGroups',
-                'inventoryGroups'
+                'inventoryPlans'
             ]);
         }
 
         // Štatistiky pre každú komisiu
         $commissionStats = [];
         foreach ($commissions as $commission) {
-            $groups = $commission->inventoryGroups;
+            $plans = $commission->inventoryPlans;
             
             $commissionStats[$commission->id] = [
-                'total_groups' => $groups->count(),
-                'active_groups' => $groups->whereIn('status', [
-                    \App\Models\InventoryGroup::STATUS_ASSIGNED,
-                    \App\Models\InventoryGroup::STATUS_IN_PROGRESS
+                'total_plans' => $plans->count(),
+                'active_plans' => $plans->whereIn('status', [
+                    \App\Models\InventoryPlan::STATUS_ASSIGNED,
+                    \App\Models\InventoryPlan::STATUS_IN_PROGRESS
                 ])->count(),
-                'completed_groups' => $groups->where('status', \App\Models\InventoryGroup::STATUS_COMPLETED)->count(),
-                'total_plans' => $commission->inventoryPlans()->count(),
-                'active_plans' => $commission->inventoryPlans()
-                    ->whereIn('status', [
-                        \App\Models\InventoryPlan::STATUS_ASSIGNED,
-                        \App\Models\InventoryPlan::STATUS_IN_PROGRESS
-                    ])->count()
+                'completed_plans' => $plans->where('status', \App\Models\InventoryPlan::STATUS_COMPLETED)->count()
             ];
         }
 
@@ -258,8 +250,15 @@ class InventoryCommissionController extends Controller
         $globalStats = [
             'my_commissions' => $userCommissions->count(),
             'my_leading_commissions' => $user->chairmanCommissions()->count(),
-            'my_groups' => $user->allGroups()->count(),
-            'my_leading_groups' => $user->leadingGroups()->count()
+            'total_plans' => $userCommissions->sum(function($commission) {
+                return $commission->inventoryPlans->count();
+            }),
+            'active_plans' => $userCommissions->sum(function($commission) {
+                return $commission->inventoryPlans->whereIn('status', [
+                    \App\Models\InventoryPlan::STATUS_ASSIGNED,
+                    \App\Models\InventoryPlan::STATUS_IN_PROGRESS
+                ])->count();
+            })
         ];
 
         // Najnovšie aktivity (pre všetky komisie používateľa)
@@ -267,19 +266,19 @@ class InventoryCommissionController extends Controller
         if (!$userCommissions->isEmpty()) {
             $commissionIds = $userCommissions->pluck('id');
             
-            $recentGroups = \App\Models\InventoryGroup::whereIn('commission_id', $commissionIds)
-                ->with(['commission', 'leader', 'inventoryPlan'])
+            $recentPlans = \App\Models\InventoryPlan::whereIn('commission_id', $commissionIds)
+                ->with(['commission', 'location', 'category'])
                 ->orderBy('updated_at', 'desc')
                 ->limit(10)
                 ->get();
                 
-            foreach ($recentGroups as $group) {
+            foreach ($recentPlans as $plan) {
                 $recentActivities[] = [
-                    'type' => 'group_update',
-                    'title' => "Skupina {$group->name} - {$group->status_label}",
-                    'description' => "Komisia: {$group->commission->name}",
-                    'timestamp' => $group->updated_at,
-                    'url' => route('inventory-groups.show', $group)
+                    'type' => 'plan_update',
+                    'title' => "Plán {$plan->name} - {$plan->status_label}",
+                    'description' => "Komisia: {$plan->commission->name}",
+                    'timestamp' => $plan->updated_at,
+                    'url' => route('inventory_plans.show', $plan)
                 ];
             }
         }
@@ -287,41 +286,46 @@ class InventoryCommissionController extends Controller
         // Aktuálne úlohy pre používateľa
         $currentTasks = [];
         
-        // Skupiny, kde je používateľ vedúci a sú aktívne
-        $activeLeadingGroups = $user->leadingGroups()
-            ->whereIn('status', [
-                \App\Models\InventoryGroup::STATUS_ASSIGNED,
-                \App\Models\InventoryGroup::STATUS_IN_PROGRESS
-            ])
-            ->with(['commission', 'inventoryPlan'])
-            ->get();
+        // Plány, kde je používateľ predseda komisie a sú aktívne
+        $activeChairmanPlans = $user->chairmanCommissions()
+            ->with(['inventoryPlans' => function($query) {
+                $query->whereIn('status', [
+                    \App\Models\InventoryPlan::STATUS_ASSIGNED,
+                    \App\Models\InventoryPlan::STATUS_IN_PROGRESS
+                ]);
+            }])
+            ->get()
+            ->flatMap(function($commission) {
+                return $commission->inventoryPlans;
+            });
             
-        foreach ($activeLeadingGroups as $group) {
+        foreach ($activeChairmanPlans as $plan) {
             $currentTasks[] = [
-                'type' => 'group_leadership',
-                'title' => "Vedujem skupinu: {$group->name}",
-                'description' => "Status: {$group->status_label}, Pokrok: {$group->progress_percentage}%",
-                'priority' => $group->status === \App\Models\InventoryGroup::STATUS_IN_PROGRESS ? 'high' : 'medium',
-                'url' => route('inventory-groups.show', $group)
+                'type' => 'commission_leadership',
+                'title' => "Vedujem komisiu pre plán: {$plan->name}",
+                'description' => "Status: {$plan->status_label}",
+                'priority' => $plan->status === \App\Models\InventoryPlan::STATUS_IN_PROGRESS ? 'high' : 'medium',
+                'url' => route('inventory_plans.show', $plan)
             ];
         }
 
-        // Skupiny, kde je používateľ člen a sú aktívne
-        $activeMemberGroups = $user->memberGroups()
-            ->whereIn('status', [
-                \App\Models\InventoryGroup::STATUS_ASSIGNED,
-                \App\Models\InventoryGroup::STATUS_IN_PROGRESS
-            ])
-            ->with(['commission', 'inventoryPlan', 'leader'])
-            ->get();
+        // Plány, kde je používateľ člen komisie a sú aktívne  
+        $activeMemberPlans = $userCommissions->filter(function($commission) use ($user) {
+            return $commission->chairman_id !== $user->id;
+        })->flatMap(function($commission) {
+            return $commission->inventoryPlans->whereIn('status', [
+                \App\Models\InventoryPlan::STATUS_ASSIGNED,
+                \App\Models\InventoryPlan::STATUS_IN_PROGRESS
+            ]);
+        });
             
-        foreach ($activeMemberGroups as $group) {
+        foreach ($activeMemberPlans as $plan) {
             $currentTasks[] = [
-                'type' => 'group_membership',
-                'title' => "Účasť v skupine: {$group->name}",
-                'description' => "Vedúci: {$group->leader->name}, Pokrok: {$group->progress_percentage}%",
-                'priority' => $group->status === \App\Models\InventoryGroup::STATUS_IN_PROGRESS ? 'high' : 'low',
-                'url' => route('inventory-groups.show', $group)
+                'type' => 'commission_membership',
+                'title' => "Účasť v komisii pre plán: {$plan->name}",
+                'description' => "Komisia: {$plan->commission->name}",
+                'priority' => $plan->status === \App\Models\InventoryPlan::STATUS_IN_PROGRESS ? 'high' : 'low',
+                'url' => route('inventory_plans.show', $plan)
             ];
         }
 
@@ -356,10 +360,7 @@ class InventoryCommissionController extends Controller
         $inventoryCommission->load([
             'chairman',
             'members',
-            'inventoryPlans.inventoryGroups.leader',
-            'inventoryGroups.leader',
-            'inventoryGroups.members',
-            'inventoryGroups.planItems.asset'
+            'inventoryPlans'
         ]);
 
         // Detailné štatistiky komisie
@@ -370,37 +371,31 @@ class InventoryCommissionController extends Controller
                     \App\Models\InventoryPlan::STATUS_ASSIGNED,
                     \App\Models\InventoryPlan::STATUS_IN_PROGRESS
                 ])->count(),
-            'total_groups' => $inventoryCommission->inventoryGroups()->count(),
-            'active_groups' => $inventoryCommission->inventoryGroups()
-                ->whereIn('status', [
-                    \App\Models\InventoryGroup::STATUS_ASSIGNED,
-                    \App\Models\InventoryGroup::STATUS_IN_PROGRESS
-                ])->count(),
-            'completed_groups' => $inventoryCommission->inventoryGroups()
-                ->where('status', \App\Models\InventoryGroup::STATUS_COMPLETED)
+            'completed_plans' => $inventoryCommission->inventoryPlans()
+                ->where('status', \App\Models\InventoryPlan::STATUS_COMPLETED)
                 ->count(),
-            'total_assets' => $inventoryCommission->inventoryGroups()
-                ->with('planItems')
+            'total_assets' => $inventoryCommission->inventoryPlans()
+                ->with('items')
                 ->get()
-                ->sum(function($group) {
-                    return $group->planItems->count();
+                ->sum(function($plan) {
+                    return $plan->items->count();
                 }),
-            'completed_assets' => $inventoryCommission->inventoryGroups()
-                ->with(['planItems' => function($query) {
+            'completed_assets' => $inventoryCommission->inventoryPlans()
+                ->with(['items' => function($query) {
                     $query->whereIn('assignment_status', [
                         \App\Models\InventoryPlanItem::ASSIGNMENT_COMPLETED,
                         \App\Models\InventoryPlanItem::ASSIGNMENT_VERIFIED
                     ]);
                 }])
                 ->get()
-                ->sum(function($group) {
-                    return $group->planItems->count();
+                ->sum(function($plan) {
+                    return $plan->items->count();
                 })
         ];
 
-        // Pokrok jednotlivých skupín
-        $groupProgress = $inventoryCommission->inventoryGroups()
-            ->with(['leader', 'inventoryPlan'])
+        // Pokrok jednotlivých plánov
+        $planProgress = $inventoryCommission->inventoryPlans()
+            ->with(['location', 'category'])
             ->orderBy('status')
             ->orderBy('name')
             ->get();
@@ -408,7 +403,7 @@ class InventoryCommissionController extends Controller
         return view('inventory-commissions.commission-dashboard', compact(
             'inventoryCommission',
             'stats',
-            'groupProgress'
+            'planProgress'
         ));
     }
 

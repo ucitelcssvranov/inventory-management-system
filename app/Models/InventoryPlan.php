@@ -52,6 +52,10 @@ class InventoryPlan extends Model
         'signed_at' => 'datetime',
     ];
 
+    protected $appends = [
+        'status_label'
+    ];
+
     // Stavy procesu inventarizácie podľa zákona
     const STATUS_DRAFT = 'draft';           // Návrh
     const STATUS_PENDING = 'pending';       // Čaká na schválenie
@@ -63,9 +67,9 @@ class InventoryPlan extends Model
     const STATUS_ARCHIVED = 'archived';     // Archivovaná
 
     // Typy inventarizácie
-    const TYPE_FULL = 'full';              // Úplná inventarizácia
-    const TYPE_PARTIAL = 'partial';        // Čiastočná inventarizácia
-    const TYPE_EXTRAORDINARY = 'extraordinary'; // Mimoriadna inventarizácia
+    const TYPE_FULL = 'fyzická';              // Fyzická inventarizácia
+    const TYPE_PARTIAL = 'dokladová';        // Dokladová inventarizácia
+    const TYPE_EXTRAORDINARY = 'kombinovaná'; // Kombinovaná inventarizácia
 
     public static function getStatusOptions()
     {
@@ -84,9 +88,9 @@ class InventoryPlan extends Model
     public static function getTypeOptions()
     {
         return [
-            self::TYPE_FULL => 'Úplná inventarizácia',
-            self::TYPE_PARTIAL => 'Čiastočná inventarizácia', 
-            self::TYPE_EXTRAORDINARY => 'Mimoriadna inventarizácia'
+            self::TYPE_FULL => 'Fyzická inventarizácia',
+            self::TYPE_PARTIAL => 'Dokladová inventarizácia', 
+            self::TYPE_EXTRAORDINARY => 'Kombinovaná inventarizácia'
         ];
     }
 
@@ -146,6 +150,12 @@ class InventoryPlan extends Model
     public function location()
     {
         return $this->belongsTo(\App\Models\Location::class, 'location_id');
+    }
+
+    public function locations()
+    {
+        return $this->belongsToMany(\App\Models\Location::class, 'inventory_plan_locations', 'inventory_plan_id', 'location_id')
+                    ->withTimestamps();
     }
 
     public function category()
@@ -282,6 +292,28 @@ class InventoryPlan extends Model
             'signed_at' => now(),
             'updated_by' => $userId ?? auth()->id()
         ]);
+    }
+
+    public function archiveInventory($userId = null)
+    {
+        if (!in_array($this->status, [self::STATUS_COMPLETED, self::STATUS_SIGNED])) {
+            throw new \Exception('Archivovať možno len dokončené alebo podpísané inventarizácie.');
+        }
+
+        $this->update([
+            'status' => self::STATUS_ARCHIVED,
+            'updated_by' => $userId ?? auth()->id()
+        ]);
+    }
+
+    public function canBeArchived()
+    {
+        return in_array($this->status, [self::STATUS_COMPLETED, self::STATUS_SIGNED]);
+    }
+
+    public function canBeDeleted()
+    {
+        return $this->status !== self::STATUS_IN_PROGRESS;
     }
 
     // Validačné pravidlá

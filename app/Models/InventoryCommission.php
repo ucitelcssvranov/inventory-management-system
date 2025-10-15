@@ -43,6 +43,14 @@ class InventoryCommission extends Model
     }
 
     /**
+     * Špecializácie komisie
+     */
+    public function specializations()
+    {
+        return $this->hasMany(CommissionSpecialization::class, 'commission_id');
+    }
+
+    /**
      * Všetci členovia komisie vrátane predsedu
      */
     public function allMembers()
@@ -59,14 +67,6 @@ class InventoryCommission extends Model
     public function inventoryPlans()
     {
         return $this->hasMany(InventoryPlan::class, 'commission_id');
-    }
-
-    /**
-     * Inventarizačné skupiny v tejto komisii
-     */
-    public function inventoryGroups()
-    {
-        return $this->hasMany(\App\Models\InventoryGroup::class, 'commission_id');
     }
 
     /**

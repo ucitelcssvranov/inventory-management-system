@@ -18,9 +18,19 @@
                         <h3>Inventarizačné plány</h3>
                         <small class="text-muted">Plánovanie a správa inventarizácií</small>
                     </div>
-                    <a href="{{ route('inventory_plans.create') }}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Vytvoriť plán
-                    </a>
+                    <div class="d-flex gap-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="showArchived" 
+                                   {{ request('show_archived') ? 'checked' : '' }}
+                                   onchange="toggleArchived()">
+                            <label class="form-check-label" for="showArchived">
+                                Zobraziť archivované
+                            </label>
+                        </div>
+                        <a href="{{ route('inventory_plans.create') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Vytvoriť plán
+                        </a>
+                    </div>
                 </div>
 
                 <!-- Plans Table -->
@@ -53,9 +63,9 @@
                                     </td>
                                     <td>
                                         @if($plan->date_start && $plan->date_end)
-                                            <small>{{ $plan->date_start->format('d.m.Y') }} - {{ $plan->date_end->format('d.m.Y') }}</small>
+                                            <small>{{ \Carbon\Carbon::parse($plan->date_start)->format('d.m.Y') }} - {{ \Carbon\Carbon::parse($plan->date_end)->format('d.m.Y') }}</small>
                                         @elseif($plan->date)
-                                            <small>{{ $plan->date->format('d.m.Y') }}</small>
+                                            <small>{{ \Carbon\Carbon::parse($plan->date)->format('d.m.Y') }}</small>
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
@@ -120,12 +130,26 @@
                                                     <i class="bi bi-person-plus"></i>
                                                 </button>
                                             @endif
-                                            <button type="button" 
-                                                    class="btn btn-sm btn-outline-danger delete-plan-btn"
-                                                    data-plan-id="{{ $plan->id }}"
-                                                    title="Vymazať">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
+                                            @if(in_array($plan->status, ['completed', 'signed']))
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-outline-secondary archive-plan-btn"
+                                                        data-plan-id="{{ $plan->id }}"
+                                                        title="Archivovať plán">
+                                                    <i class="bi bi-archive"></i>
+                                                </button>
+                                            @endif
+                                            @if($plan->status !== 'in_progress')
+                                                <button type="button" 
+                                                        class="btn btn-sm {{ $plan->status === 'signed' ? 'btn-danger' : 'btn-outline-danger' }} delete-plan-btn"
+                                                        data-plan-id="{{ $plan->id }}"
+                                                        data-plan-status="{{ $plan->status }}"
+                                                        title="{{ $plan->status === 'signed' ? 'Vymazať podpísaný plán (vyžaduje potvrdenie)' : ($plan->status === 'completed' ? 'Vymazať dokončený plán' : 'Vymazať plán') }}">
+                                                    <i class="bi bi-trash"></i>
+                                                    @if($plan->status === 'signed')
+                                                        <i class="bi bi-exclamation-triangle ms-1"></i>
+                                                    @endif
+                                                </button>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -278,8 +302,22 @@ $(document).ready(function() {
         const planId = $(this).data('plan-id');
         const $row = $('#plan-row-' + planId);
         
-        if (confirm('Naozaj chcete vymazať tento inventarizačný plán?')) {
-            fetch(`/inventory_plans/${planId}`, {
+        deletePlan(planId, $row);
+    });
+
+    function deletePlan(planId, $row, confirmSigned = false) {
+        let confirmMessage = 'Naozaj chcete vymazať tento inventarizačný plán?';
+        
+        if (confirmSigned) {
+            confirmMessage = 'POZOR: Vymazávate podpísaný inventarizačný plán! Táto akcia je nevratná. Naozaj pokračovať?';
+        }
+        
+        if (confirm(confirmMessage)) {
+            const url = confirmSigned ? 
+                `/inventory_plans/${planId}?confirm_signed=yes` : 
+                `/inventory_plans/${planId}`;
+                
+            fetch(url, {
                 method: 'DELETE',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -295,6 +333,9 @@ $(document).ready(function() {
                         $(this).remove();
                     });
                     showAlert('success', data.message || 'Plán bol úspešne vymazaný.');
+                } else if (data.requires_confirmation && data.plan_status === 'signed') {
+                    // Pre podpísané plány vyžaduj dodatočné potvrdenie
+                    deletePlan(planId, $row, true);
                 } else {
                     showAlert('danger', data.message || 'Chyba pri mazaní plánu.');
                 }
@@ -304,8 +345,52 @@ $(document).ready(function() {
                 showAlert('danger', 'Chyba pri mazaní plánu.');
             });
         }
+    }
+
+    // Archive plan
+    $('.archive-plan-btn').click(function() {
+        const planId = $(this).data('plan-id');
+        const $row = $('#plan-row-' + planId);
+        
+        if (confirm('Naozaj chcete archivovať tento inventarizačný plán?')) {
+            fetch(`/inventory-plans/${planId}/archive`, {
+                method: 'PATCH',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', data.message || 'Plán bol úspešne archivovaný.');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert('danger', data.message || 'Chyba pri archivácii plánu.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('danger', 'Chyba pri archivácii plánu.');
+            });
+        }
     });
 });
+
+function toggleArchived() {
+    const checkbox = document.getElementById('showArchived');
+    const currentUrl = new URL(window.location);
+    
+    if (checkbox.checked) {
+        currentUrl.searchParams.set('show_archived', '1');
+    } else {
+        currentUrl.searchParams.delete('show_archived');
+    }
+    
+    window.location.href = currentUrl.toString();
+}
 </script>
 @endpush
 

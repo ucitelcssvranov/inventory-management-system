@@ -1,8 +1,337 @@
-// Fonts
-@import url('https://fonts.googleapis.com/css?family=Nunito');
+// Fonts - Professional typography for educational institutions
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Sans+Pro:wght@400;600;700&display=swap');
 
 // Variables
 @import 'variables';
 
-// Bootstrap
-@import '~bootstrap/scss/bootstrap';
+// Bootstrap is loaded via CDN in layout file - removed from here to avoid conflicts
+// @import '~bootstrap/scss/bootstrap';
+
+// Custom Styles for Educational Institution
+:root {
+  --edu-primary: #1e3a8a;      // Professional navy blue
+  --edu-secondary: #64748b;     // Neutral gray
+  --edu-accent: #059669;        // Success green
+  --edu-warning: #d97706;       // Warning amber
+  --edu-danger: #dc2626;        // Error red
+  --edu-light: #f8fafc;        // Light background
+  --edu-white: #ffffff;         // Pure white
+  --edu-dark: #1e293b;         // Dark text
+  --edu-border: #e2e8f0;       // Light border
+  --edu-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --edu-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--edu-light);
+  color: var(--edu-dark);
+  line-height: 1.6;
+}
+
+// Professional Navigation
+.navbar {
+  background: linear-gradient(135deg, var(--edu-primary) 0%, #2563eb 100%);
+  border: none;
+  box-shadow: var(--edu-shadow-lg);
+  padding: 0.75rem 0;
+  
+  .navbar-brand {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--edu-white) !important;
+    display: flex;
+    align-items: center;
+    
+    &::before {
+      content: "🏫";
+      margin-right: 0.5rem;
+      font-size: 1.25rem;
+    }
+  }
+  
+  .nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 500;
+    padding: 0.5rem 1rem !important;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      color: var(--edu-white) !important;
+      background-color: rgba(255, 255, 255, 0.1);
+      transform: translateY(-1px);
+    }
+    
+    &.text-danger {
+      color: #fca5a5 !important;
+      
+      &:hover {
+        color: #fecaca !important;
+        background-color: rgba(239, 68, 68, 0.1);
+      }
+    }
+  }
+  
+  .dropdown-menu {
+    border: none;
+    box-shadow: var(--edu-shadow-lg);
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    
+    .dropdown-item {
+      border-radius: 0.375rem;
+      padding: 0.5rem 0.75rem;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background-color: var(--edu-light);
+        color: var(--edu-primary);
+      }
+    }
+  }
+}
+
+// Professional Cards
+.card {
+  border: none;
+  border-radius: 0.75rem;
+  box-shadow: var(--edu-shadow);
+  transition: all 0.3s ease;
+  background: var(--edu-white);
+  
+  &.hover-shadow-lg:hover {
+    box-shadow: var(--edu-shadow-lg);
+    transform: translateY(-2px);
+  }
+  
+  .card-header {
+    background: linear-gradient(135deg, var(--edu-light) 0%, #f1f5f9 100%);
+    border-bottom: 1px solid var(--edu-border);
+    border-radius: 0.75rem 0.75rem 0 0 !important;
+    padding: 1rem 1.5rem;
+    
+    h5, h4, h3 {
+      margin: 0;
+      font-weight: 600;
+      color: var(--edu-dark);
+    }
+  }
+  
+  .card-body {
+    padding: 1.5rem;
+  }
+  
+  .card-footer {
+    background: var(--edu-light);
+    border-top: 1px solid var(--edu-border);
+    border-radius: 0 0 0.75rem 0.75rem !important;
+    padding: 1rem 1.5rem;
+  }
+}
+
+// Professional Buttons
+.btn {
+  font-weight: 500;
+  border-radius: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  transition: all 0.2s ease;
+  border: none;
+  
+  &.btn-primary {
+    background: linear-gradient(135deg, var(--edu-primary) 0%, #2563eb 100%);
+    color: var(--edu-white);
+    
+    &:hover {
+      background: linear-gradient(135deg, #1e40af 0%, var(--edu-primary) 100%);
+      transform: translateY(-1px);
+      box-shadow: var(--edu-shadow-lg);
+    }
+  }
+  
+  &.btn-success {
+    background: linear-gradient(135deg, var(--edu-accent) 0%, #10b981 100%);
+    
+    &:hover {
+      background: linear-gradient(135deg, #047857 0%, var(--edu-accent) 100%);
+      transform: translateY(-1px);
+    }
+  }
+  
+  &.btn-outline-primary {
+    border: 2px solid var(--edu-primary);
+    color: var(--edu-primary);
+    
+    &:hover {
+      background: var(--edu-primary);
+      color: var(--edu-white);
+      transform: translateY(-1px);
+    }
+  }
+}
+
+// Professional Tables
+.table {
+  background: var(--edu-white);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: var(--edu-shadow);
+  
+  thead th {
+    background: linear-gradient(135deg, var(--edu-primary) 0%, #2563eb 100%);
+    color: var(--edu-white);
+    font-weight: 600;
+    border: none;
+    padding: 1rem;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
+  }
+  
+  tbody td {
+    padding: 0.875rem 1rem;
+    border-color: var(--edu-border);
+    vertical-align: middle;
+  }
+  
+  tbody tr:hover {
+    background-color: var(--edu-light);
+  }
+}
+
+// Professional Forms
+.form-control, .form-select {
+  border: 2px solid var(--edu-border);
+  border-radius: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  transition: all 0.2s ease;
+  
+  &:focus {
+    border-color: var(--edu-primary);
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+  }
+}
+
+// Professional Alerts
+.alert {
+  border: none;
+  border-radius: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-left: 4px solid;
+  
+  &.alert-info {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-left-color: #3b82f6;
+    color: #1e40af;
+  }
+  
+  &.alert-success {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    border-left-color: var(--edu-accent);
+    color: #047857;
+  }
+  
+  &.alert-warning {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-left-color: var(--edu-warning);
+    color: #92400e;
+  }
+  
+  &.alert-danger {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    border-left-color: var(--edu-danger);
+    color: #991b1b;
+  }
+}
+
+// Professional Statistics Cards
+.stats-card {
+  background: linear-gradient(135deg, var(--edu-white) 0%, #f8fafc 100%);
+  border-left: 4px solid var(--edu-primary);
+  
+  &.stats-primary { border-left-color: var(--edu-primary); }
+  &.stats-success { border-left-color: var(--edu-accent); }
+  &.stats-warning { border-left-color: var(--edu-warning); }
+  &.stats-info { border-left-color: #0ea5e9; }
+  
+  .stats-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .stats-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--edu-dark);
+    margin: 0;
+  }
+  
+  .stats-label {
+    color: var(--edu-secondary);
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
+  }
+}
+
+// Professional Header
+.page-header {
+  background: linear-gradient(135deg, var(--edu-white) 0%, var(--edu-light) 100%);
+  border-radius: 0.75rem;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--edu-shadow);
+  
+  h1 {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 700;
+    color: var(--edu-dark);
+    margin: 0;
+  }
+  
+  .breadcrumb {
+    background: none;
+    padding: 0;
+    margin: 0.5rem 0 0 0;
+    
+    .breadcrumb-item {
+      color: var(--edu-secondary);
+      
+      &.active {
+        color: var(--edu-primary);
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+// Educational Institution Branding
+.institution-logo {
+  max-height: 40px;
+  margin-right: 0.75rem;
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .navbar-brand {
+    font-size: 1.25rem;
+  }
+  
+  .stats-card {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+  
+  .page-header {
+    padding: 1.5rem;
+    text-align: center;
+  }
+}

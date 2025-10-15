@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\InventoryPlan;
-use App\Models\InventoryGroup;
+use App\Models\InventoryCommission;
 use App\Models\InventoryCount;
+use App\Models\InventoryPlanItem;
 use App\Services\CacheService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -29,7 +30,7 @@ class InventoryApiController extends Controller
     public function getPlans(Request $request): JsonResponse
     {
         try {
-            $query = InventoryPlan::with(['groups:id,name,inventory_plan_id']);
+            $query = InventoryPlan::with(['commission:id,name']);
             
             if ($request->filled('status')) {
                 $query->where('status', $request->status);
@@ -61,8 +62,8 @@ class InventoryApiController extends Controller
     {
         try {
             $plan->load([
-                'groups' => function($query) {
-                    $query->with(['leader:id,name', 'members:id,name', 'commission:id,name']);
+                'commission' => function($query) {
+                    $query->with(['chairman:id,name', 'members:id,name']);
                 }
             ]);
             
@@ -81,12 +82,12 @@ class InventoryApiController extends Controller
     }
 
     /**
-     * Zobrazí inventárne skupiny pre používateľa
+     * Zobrazí inventárne komisie pre používateľa
      *
      * @param Request $request
      * @return JsonResponse
      */
-    public function getUserGroups(Request $request): JsonResponse
+    public function getUserCommissions(Request $request): JsonResponse
     {
         try {
             $request->validate([
@@ -95,10 +96,10 @@ class InventoryApiController extends Controller
 
             $userId = $request->user_id;
             
-            // Nájdi skupiny kde je používateľ vedúci alebo člen
-            $groups = InventoryGroup::with(['plan:id,name,start_date,end_date,status', 'commission:id,name'])
+            // Nájdi komisie kde je používateľ predseda alebo člen
+            $commissions = InventoryCommission::with(['inventoryPlans:id,name,date_start,date_end,status,commission_id'])
                 ->where(function($query) use ($userId) {
-                    $query->where('leader_id', $userId)
+                    $query->where('chairman_id', $userId)
                           ->orWhereHas('members', function($q) use ($userId) {
                               $q->where('user_id', $userId);
                           });
@@ -108,7 +109,7 @@ class InventoryApiController extends Controller
             
             return response()->json([
                 'success' => true,
-                'data' => $groups
+                'data' => $commissions
             ]);
 
         } catch (ValidationException $e) {
@@ -121,33 +122,35 @@ class InventoryApiController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Chyba pri načítavaní skupín',
+                'message' => 'Chyba pri načítavaní komisií',
                 'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }
 
     /**
-     * Zobrazí inventárne počty pre skupinu
+     * Zobrazí inventárne počty pre komisiu
      *
-     * @param InventoryGroup $group
+     * @param InventoryCommission $commission
      * @return JsonResponse
      */
-    public function getInventoryCounts(InventoryGroup $group): JsonResponse
+    public function getInventoryCounts(InventoryCommission $commission): JsonResponse
     {
         try {
+            // Získame inventarizačné počty cez plan items pridelené tejto komisii
             $counts = InventoryCount::with(['asset:id,name,inventory_number,category_id,location_id'])
-                ->where('inventory_group_id', $group->id)
+                ->whereHas('planItem', function($query) use ($commission) {
+                    $query->where('commission_id', $commission->id);
+                })
                 ->orderBy('created_at', 'desc')
                 ->get();
             
             return response()->json([
                 'success' => true,
                 'data' => $counts,
-                'group' => [
-                    'id' => $group->id,
-                    'name' => $group->name,
-                    'status' => $group->status
+                'commission' => [
+                    'id' => $commission->id,
+                    'name' => $commission->name,
                 ]
             ]);
 
@@ -170,7 +173,7 @@ class InventoryApiController extends Controller
     {
         try {
             $validated = $request->validate([
-                'inventory_group_id' => 'required|exists:inventory_groups,id',
+                'plan_item_id' => 'required|exists:inventory_plan_items,id',
                 'asset_id' => 'required|exists:assets,id',
                 'counted_quantity' => 'required|integer|min:0',
                 'condition' => 'nullable|in:new,good,fair,poor,damaged',
@@ -180,7 +183,7 @@ class InventoryApiController extends Controller
             ]);
 
             // Skontroluj či už existuje záznam
-            $existingCount = InventoryCount::where('inventory_group_id', $validated['inventory_group_id'])
+            $existingCount = InventoryCount::where('plan_item_id', $validated['plan_item_id'])
                 ->where('asset_id', $validated['asset_id'])
                 ->first();
 
@@ -218,24 +221,26 @@ class InventoryApiController extends Controller
     }
 
     /**
-     * Získa prehľad inventúry pre skupinu
+     * Získa prehľad inventúry pre komisiu
      *
-     * @param InventoryGroup $group
+     * @param InventoryCommission $commission
      * @return JsonResponse
      */
-    public function getInventoryOverview(InventoryGroup $group): JsonResponse
+    public function getInventoryOverview(InventoryCommission $commission): JsonResponse
     {
         try {
-            // Celkový počet assets priradených skupine (podľa lokácií/kategórií)
-            $totalAssets = $this->getTotalAssetsForGroup($group);
+            // Celkový počet assets priradených komisii
+            $totalAssets = $this->getTotalAssetsForCommission($commission);
             
             // Počet už spočítaných assets
-            $countedAssets = InventoryCount::where('inventory_group_id', $group->id)->count();
+            $countedAssets = InventoryCount::whereHas('planItem', function($query) use ($commission) {
+                $query->where('commission_id', $commission->id);
+            })->count();
             
             // Počet rozdielov
-            $differences = InventoryCount::where('inventory_group_id', $group->id)
-                ->whereColumn('counted_quantity', '!=', 'expected_quantity')
-                ->count();
+            $differences = InventoryCount::whereHas('planItem', function($query) use ($commission) {
+                $query->where('commission_id', $commission->id);
+            })->whereColumn('counted_quantity', '!=', 'expected_quantity')->count();
             
             // Progress
             $progress = $totalAssets > 0 ? round(($countedAssets / $totalAssets) * 100, 1) : 0;
@@ -243,14 +248,13 @@ class InventoryApiController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'group_id' => $group->id,
-                    'group_name' => $group->name,
+                    'commission_id' => $commission->id,
+                    'commission_name' => $commission->name,
                     'total_assets' => $totalAssets,
                     'counted_assets' => $countedAssets,
                     'remaining_assets' => $totalAssets - $countedAssets,
                     'differences_found' => $differences,
                     'progress_percent' => $progress,
-                    'status' => $group->status,
                     'is_completed' => $progress >= 100
                 ]
             ]);
@@ -289,12 +293,11 @@ class InventoryApiController extends Controller
     }
 
     /**
-     * Pomocná funkcia na získanie celkového počtu assets pre skupinu
+     * Pomocná funkcia na získanie celkového počtu assets pre komisiu
      */
-    private function getTotalAssetsForGroup(InventoryGroup $group): int
+    private function getTotalAssetsForCommission(InventoryCommission $commission): int
     {
-        // Tu by bola logika na základe priradených lokácií/kategórií
-        // Pre jednoduchosť vrátime počet všetkých assets
-        return \App\Models\Asset::count();
+        // Počet všetkých inventory plan items priradených tejto komisii
+        return InventoryPlanItem::where('commission_id', $commission->id)->count();
     }
 }

@@ -1,49 +1,104 @@
 <!-- USER DASHBOARD -->
 <!-- Moje úlohy a štatistiky -->
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="card border-0 shadow-sm hover-shadow-lg bg-primary text-white">
-            <div class="card-body text-center">
-                <i class="bi bi-people display-4 mb-3"></i>
-                <h3 class="mb-1">{{ $stats['my_commissions_count'] ?? 0 }}</h3>
-                <small class="opacity-75">Moje komisie</small>
+<div class="row mb-5">
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card stats-card stats-primary hover-shadow-lg">
+            <div class="card-body text-center p-4">
+                <div class="stats-icon bg-primary mx-auto">
+                    <i class="bi bi-people"></i>
+                </div>
+                <h3 class="stats-number">{{ $stats['my_commissions_count'] ?? 0 }}</h3>
+                <p class="stats-label">Moje komisie</p>
             </div>
-            <div class="card-footer bg-transparent border-0">
-                <a href="{{ route('inventory-commissions.index') }}" class="btn btn-light btn-sm w-100">
+            <div class="card-footer bg-transparent border-0 p-3">
+                <a href="{{ route('inventory-commissions.index') }}" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-arrow-right me-1"></i>
                     Zobraziť komisie
                 </a>
             </div>
         </div>
     </div>
 
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="card border-0 shadow-sm hover-shadow-lg bg-warning text-dark">
-            <div class="card-body text-center">
-                <i class="bi bi-clipboard-data display-4 mb-3"></i>
-                <h3 class="mb-1">{{ $stats['my_assigned_items'] ?? 0 }}</h3>
-                <small class="opacity-75">Pridelených položiek</small>
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card stats-card stats-warning hover-shadow-lg">
+            <div class="card-body text-center p-4">
+                <div class="stats-icon bg-warning mx-auto">
+                    <i class="bi bi-clipboard-data"></i>
+                </div>
+                <h3 class="stats-number">{{ $stats['my_assigned_items'] ?? 0 }}</h3>
+                <p class="stats-label">Pridelených položiek</p>
             </div>
-            <div class="card-footer bg-transparent border-0">
-                <a href="{{ route('inventory_plans.index') }}" class="btn btn-light btn-sm w-100">
+            <div class="card-footer bg-transparent border-0 p-3">
+                <a href="{{ route('inventory-tasks.index') }}" class="btn btn-warning btn-sm w-100 text-dark">
+                    <i class="bi bi-arrow-right me-1"></i>
                     Moje úlohy
                 </a>
             </div>
         </div>
     </div>
 
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="card border-0 shadow-sm hover-shadow-lg bg-info text-white">
-            <div class="card-body text-center">
-                <i class="bi bi-check-circle display-4 mb-3"></i>
-                <h3 class="mb-1">{{ $stats['my_completed_items'] ?? 0 }}</h3>
-                <small class="opacity-75">Dokončených</small>
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card stats-card stats-success hover-shadow-lg">
+            <div class="card-body text-center p-4">
+                <div class="stats-icon bg-success mx-auto">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <h3 class="stats-number">{{ $stats['my_completed_items'] ?? 0 }}</h3>
+                <p class="stats-label">Dokončených</p>
             </div>
-            <div class="card-footer bg-transparent border-0">
-                <span class="badge bg-light text-info w-100">
-                    {{ $stats['my_assigned_items'] > 0 ? round(($stats['my_completed_items'] / $stats['my_assigned_items']) * 100, 1) : 0 }}% hotové
-                </span>
+            <div class="card-footer bg-transparent border-0 p-3">
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-success" role="progressbar" 
+                         style="width: {{ $stats['my_assigned_items'] > 0 ? round(($stats['my_completed_items'] / $stats['my_assigned_items']) * 100, 1) : 0 }}%"
+                         aria-valuenow="{{ $stats['my_assigned_items'] > 0 ? round(($stats['my_completed_items'] / $stats['my_assigned_items']) * 100, 1) : 0 }}" 
+                         aria-valuemin="0" aria-valuemax="100">
+                    </div>
+                </div>
+                <small class="text-muted mt-2 d-block">
+                    {{ $stats['my_assigned_items'] > 0 ? round(($stats['my_completed_items'] / $stats['my_assigned_items']) * 100, 1) : 0 }}% dokončené
+                </small>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Rýchle akcie pre používateľa -->
+<div class="row mb-5">
+    <div class="col-12">
+        <h3 class="section-title">
+            <i class="bi bi-list-task me-2"></i>
+            Moje úlohy
+        </h3>
+    </div>
+    
+    <div class="col-lg-4 col-md-6 mb-4">
+        <a href="{{ route('inventory-commissions.index') }}" class="action-card d-block">
+            <div class="action-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Moje komisie</h5>
+            <p class="text-muted mb-0 small">Prehliadanie komisií, ktorých som členom</p>
+        </a>
+    </div>
+    
+    <div class="col-lg-4 col-md-6 mb-4">
+        <a href="{{ route('inventory_plans.index') }}" class="action-card d-block">
+            <div class="action-icon">
+                <i class="bi bi-clipboard-check"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Inventarizačné plány</h5>
+            <p class="text-muted mb-0 small">Plány pridelené mojim komisiám</p>
+        </a>
+    </div>
+    
+    <div class="col-lg-4 col-md-6 mb-4">
+        <a href="{{ route('inventory_reports.index') }}" class="action-card d-block">
+            <div class="action-icon">
+                <i class="bi bi-file-earmark-text"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Moje správy</h5>
+            <p class="text-muted mb-0 small">Správy z mojej inventarizačnej činnosti</p>
+        </a>
     </div>
 </div>
 
