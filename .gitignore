@@ -13,3 +13,19 @@ npm-debug.log
 yarn-error.log
 /.idea
 /.vscode
+
+# Test files and scripts
+test_*.php
+check_*.php
+debug_*.php
+create_test_*.php
+create_admin*.php
+create_simple_user.php
+verify_*.php
+find_*.php
+fix_*.php
+clean_*.php
+move_*.php
+setup_*.php
+inventory_diagnostics.php
+reset_user_password.php
